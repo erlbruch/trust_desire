@@ -29,6 +29,10 @@ class Group(BaseGroup):
     sent_back_amount = models.CurrencyField(
         doc="""Amount sent back by P2""", label="How much do you want to send back?"
     )
+    # Wir brauchen ein weiteres Feld, dass festhält, wie viel erwartet wird
+    desire_amount = models.CurrencyField(
+        doc="""Desired by A""", label="How much do you want back from B?"
+    )
 
 
 class Player(BasePlayer):
@@ -50,11 +54,34 @@ def set_payoffs(group: Group):
 # PAGES
 class Send(Page):
     form_model = 'group'
-    form_fields = ['sent_amount']
+    # So fügen wir 2 inputs ein. Auf der Seite "Send" wird das dann mit formfields ausgegeben
+    form_fields = ['sent_amount','desire_amount']
 
     @staticmethod
     def is_displayed(player: Player):
         return player.id_in_group == 1
+
+    @staticmethod
+    def error_message(player: Player, values):
+        # Hier die Bedingung für die Erwartung
+        # Extra ausführlich
+
+        # Aus der Eingabe
+        sent = values['sent_amount']
+
+        # Von den Konstanten
+        multiplier = C.MULTIPLIER
+
+        # Aus der Eingabe
+        desire = values['desire_amount']
+
+        # Zwischenrechnung
+        max_desire = values['sent_amount'] * C.MULTIPLIER
+
+        # Fehlerbedingung
+        if desire > max_desire:
+            # Fehlermeldung (dynamisch)
+            return f'You cannot expect more than { max_desire } ({ sent } x { multiplier })'
 
 
 class WaitForP1(WaitPage):
